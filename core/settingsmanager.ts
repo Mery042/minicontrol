@@ -11,10 +11,10 @@ export default class SettingsManager {
         primary: "9f0",
         secondary: "f90",
         title_fg: "fff",
-        title_bg: "334",
-        widget_bg: "000",
+        title_bg: "09c",
+        widget_bg: "012",
         widget_text: "fff",
-        window_bg: "223",
+        window_bg: "123",
         window_text: "fff",
         button_bg: "778",
         button_bg_hover: "679",
@@ -35,8 +35,8 @@ export default class SettingsManager {
         this.settings = this._defaultSettings;
         /** load colors from environment variables */
         for (const color in this._defaultColors) {
-            const vari = "COLOR_" + color.toString().toUpperCase();
-            this.colors[color] = process.env[vari] || this._defaultColors[color];
+            const envVar = "COLOR_" + color.toString().toUpperCase();
+            this.colors[color] = process.env[envVar] || this._defaultColors[color];
         }
         this.colors['button_bg_light'] = modLightness(this.colors['button_bg'], 15);
         this.colors['button_bg_dark'] = modLightness(this.colors['button_bg'], -15);

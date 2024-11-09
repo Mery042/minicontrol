@@ -97,7 +97,9 @@ export default class RecordsWidget extends Plugin {
         let outRecords: any[] = [];
 
         if (!widget) {
+            this.widgetType[login] = "server";
             widget = new recordsWidget('core/plugins/widgets/records/widget.twig');
+            widget.title = "RECORDS";
             widget.recipient = login;
             widget.pos = { x: 121, y: 30, z: 0 };
             widget.size = { width: 38, height: 45 };

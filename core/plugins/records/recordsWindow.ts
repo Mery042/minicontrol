@@ -1,13 +1,12 @@
-import ListWindow from "@core/ui/listwindow.ts";
-import Records from "@core/plugins/records/index.ts";
-import LiveRecords from "@core/plugins/liveRecords/index.ts";
+import ListWindow from "@core/ui/listwindow";
 import Confirm from "@core/ui/confirm";
 import Score from "@core/schemas/scores.model";
 import Player from "@core/schemas/players.model";
 import { formatTime } from '@core/utils';
 import { Op } from "sequelize";
-import liveRecords from "@core/plugins/liveRecords/index.ts";
-import type worldRecords from "../worldRecords";
+import WorldRecords from "@core/plugins/worldrecords";
+import Records from "@core/plugins/records";
+import LiveRecords from "@core/plugins/liveRecords";
 
 interface Column {
     title: string;
@@ -15,7 +14,7 @@ interface Column {
     width: number;
 }
 
-type AppType = Records | LiveRecords | worldRecords;
+type AppType = Records | LiveRecords | WorldRecords;
 
 export default class RecordsWindow extends ListWindow {
     app: AppType;
@@ -44,6 +43,7 @@ export default class RecordsWindow extends ListWindow {
             else if (this.title.includes("Server Records")) {
                 recordDetails = await this.getRecordDetails(item.login);
             }
+
             if (recordDetails) {
                 const detailsWindow = new DetailsWindow(login, recordDetails);
                 await detailsWindow.display();
@@ -56,21 +56,21 @@ export default class RecordsWindow extends ListWindow {
     }
 
     async getRecordDetails(login: string) {
-        if (this.app instanceof Records)
+        if (this.title.includes('Server Records'))
         {
             try {
                 const record = await Score.findOne({
-                    where: { login: login, mapUuid: this.app.currentMapUid },
-                    order: [['time', 'ASC'], ['updatedAt', 'ASC']], // just in case there are multiple entries for the same player on that map for whatever reason 
+                    where: { login: login, mapUuid: (this.app as Records).currentMapUid },
+                    order: [['time', 'ASC'], ['updatedAt', 'ASC']], // just in case there are multiple entries for the same player on that map for whatever reason
                     include: [Player],
                 });
 
                 if (record) {
                     const betterRecordsCount = await Score.count({
                         where: {
-                            mapUuid: this.app.currentMapUid,
+                            mapUuid: (this.app as Records).currentMapUid,
                             [Op.or]: [
-                                { 
+                                {
                                     time: { [Op.lt]: record.time }
                                 },
                                 {
@@ -98,16 +98,16 @@ export default class RecordsWindow extends ListWindow {
                 return null;
             }
         }
-        else if (this.app instanceof liveRecords) {
+        else if (this.title.includes("Live Records")) {
             try {
-                const liveRecord = this.app.liveRecords.find(record => record.login === login);
-        
+                const liveRecord = (this.app as LiveRecords).liveRecords.find(record => record.login === login);
+
                 if (!liveRecord) {
                     return null;
                 }
-                
+
                 return {
-                    rank: this.app.liveRecords.indexOf(liveRecord) + 1,
+                    rank: (this.app as LiveRecords).liveRecords.indexOf(liveRecord) + 1,
                     nickname: liveRecord.player?.nickname || liveRecord.login,
                     time: liveRecord.time,
                     checkpoints: liveRecord.checkpoints
@@ -129,7 +129,7 @@ class DetailsWindow extends ListWindow {
 
     constructor(login: string, record: any) {
         super(login);
-        this.record = record;  
+        this.record = record;
         this.title = `Record Details for ${this.record?.nickname || 'Unknown'}`;
     }
 
@@ -149,14 +149,14 @@ class DetailsWindow extends ListWindow {
                 items.push({ key: "", value: "" });
                 const laps = this.record.checkpoints.split(';');
                 let lastLapTotalTime = 0;
-            
+
                 laps.forEach((lap: string, lapIndex: number) => {
                     const lapCheckpoints = lap.split(',');
                     items.push({ key: `Lap ${lapIndex + 1}`, value: "" });
-            
+
                     lapCheckpoints.forEach((cpTimeStr: string, index: number) => {
                         const cpTime = parseInt(cpTimeStr);
-            
+
                         if (!isNaN(cpTime)) {
                             const lapTime = cpTime - lastLapTotalTime;
                             lastLapTotalTime = cpTime;
